@@ -8,6 +8,8 @@ DYNAMIC_MACRO_ENABLE = yes
 SPACE_CADET_ENABLE = no
 COMBO_ENABLE = yes
 
+SRC += ./features/achordion.c
+
 CFLAGS += -w
 # CFLAGS += -Wno-unused-function
 CFLAGS += -I$(shell zig env | jq -r '.lib_dir')
