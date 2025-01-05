@@ -3,7 +3,7 @@ const c = @cImport({
     // @cDefine("MATRIX_ROWS", "12");
     // @cDefine("MATRIX_COLS", "7");
     // @cDefine("MOON_LED_LEVEL", "LED_LEVEL");
-    // @cInclude("config.h");
+    @cInclude("keyboards/zsa/voyager/config.h");
     @cInclude("keycode.h");
     @cInclude("quantum_keycodes.h");
     // @cInclude("keymap.h");
@@ -56,7 +56,7 @@ pub const BR_SPEC: keycode_t = c.MO(@intFromEnum(layers.SPECIAL));
 
 // zig fmt: on
 
-pub export const keymaps = std.enums.directEnumArray(layers, [12][7]keycode_t, 0, .{
+pub export const keymaps = std.enums.directEnumArray(layers, [c.MATRIX_ROWS][c.MATRIX_COLS]keycode_t, 0, .{
     // zig fmt: off
     .BASE = layouts.layout_voyager(keycode_t, c.XXXXXXX, .{
         c.XXXXXXX, c.XXXXXXX, c.XXXXXXX, c.XXXXXXX, c.XXXXXXX, c.XXXXXXX,            c.XXXXXXX, c.XXXXXXX, c.XXXXXXX, c.XXXXXXX, c.XXXXXXX, c.XXXXXXX,
