@@ -71,17 +71,38 @@ const incluceDirs = [_][:0]const u8{
     "tmk_core/protocol/chibios",
     "tmk_core/protocol/chibios/lufa_utils",
     "users/reo101",
-    ".",
 };
 
-fn addQMKIncludePaths(b: *std.Build.Step.Compile) void {
+fn addQMKIncludePaths(b: *std.Build, s: *std.Build.Step.Compile) !void {
+    const proc = try std.process.Child.run(.{
+        .argv = &[_][]const u8{ "qmk", "config", "-ro", "user.qmk_home" },
+        .allocator = b.allocator,
+    });
+    defer b.allocator.free(proc.stdout);
+    defer b.allocator.free(proc.stderr);
+
+    const stdout = std.mem.trim(u8, proc.stdout, &[_]u8{ ' ', '\n' });
+
+    if (!std.meta.eql(proc.term, .{ .Exited = 0 })) {
+        return error.QmkInvocationFailure;
+    }
+
+    // Extract the path from `user.qmk_home=/some/path`
+    const prefix: []const u8 = "user.qmk_home=";
+    const qmk_home: []const u8 = if (std.mem.startsWith(u8, stdout, prefix))
+        stdout[prefix.len..]
+    else
+        return error.QmkOutputParseError;
+
     inline for (incluceDirs) |dir| {
-        // TODO: `qmk` ivocation to see where home is
-        b.addIncludePath(.{ .cwd_relative = "../../../../../../qmk_firmware/" ++ dir });
+        // TODO: maybe some `std.fs.path` shenanigans
+        const path = try std.fmt.allocPrint(b.allocator, "{s}/{s}", .{ qmk_home, dir });
+        defer b.allocator.free(path);
+        s.addIncludePath(.{ .cwd_relative = path });
     }
 }
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{
         .default_target = .{
             .cpu_arch = .thumb,
@@ -112,7 +133,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     keymap.linkLibC();
-    addQMKIncludePaths(keymap);
+    try addQMKIncludePaths(b, keymap);
 
     const emit_c = b.addInstallBinFile(keymap.getEmittedBin(), "keymap_generated.c");
 
